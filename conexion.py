@@ -1,6 +1,8 @@
 import pymysql
 from colorama import init, Fore, Back, Style
 from open import SQLFile
+import sqlite3
+import re
 
 class Conexion:
     conn=None
@@ -10,7 +12,7 @@ class Conexion:
     db=None
     fetch=None
 
-    instrucciones=["use","insert","select","update","delete",'create']
+    instrucciones=["use","insert","select","update","delete",'create',"drop"]
     
     
     def __init__(self,database=None,version=None,archivoSQL=None):
@@ -70,11 +72,11 @@ class Conexion:
                 self.conn.commit()
                 
             return 1
-        except Exception:
+        except Exception as e:
             ##consulta mal formulada o imposible
             if( self.print==False):
-                print(query)
-            print(f"{Back.RED}____________>Fallo La consulta{Back.RESET}")
+                print(f'!========{query}!=======')
+            print(f"{Back.RED}____________>Fallo La consulta{Back.RESET}({e})")
             print()
             return -1
         
@@ -92,7 +94,8 @@ class Conexion:
     
     def executeSQLFile(self,extension):
         self.file=SQLFile()
-        self.showQuery(False)
+        #self.print=True
+        #self.showQuery(False)
 
         with open(self.archivoSQL, "r",encoding="utf-8") as archivo:
             c=0
@@ -101,28 +104,35 @@ class Conexion:
                 #print(c)
 
                 #print('queries=',self.SqlQueries)
-                for i in self.SqlQueries:
-                    inst=self.detectar_Instruccion(i)
-                    buscar=None
-                    if (inst ==5):
-                        #create schema test    .
-                        i=i.lower().replace('database','schema',1)
-                        buscar='schema'
-                        
-                    elif(inst==0):
-                        #use ....
-                        buscar='use'
+                #print(f'MITAD:[{self.file.primera_mitad}]')
+                print('QUERYS:[')
+                print("\n".join(self.SqlQueries))
+                print('======<FIN')
 
-                    if (inst ==5 or inst ==0):
-                        try:
-                            i.lower().split(buscar,1)[1].split(self.db)
-                        except(Exception):
-                            print('EXECUTE T1')
-                            self.execute_query(i)
+                for i in self.SqlQueries:
+                    #ubicamos la instuccion
+                    
+                    i=i.lower().replace('database','schema',1)
+
+                    if(i.lower().find(self.db.lower())!=-1):
+                        # hay que hacer una operacion en la db             
+                        inst=self.detectar_Instruccion(i)
+                        print('EXECUTE CON UNA PEQUEÑA MODIFICACION')         
+
+                        if(inst ==6 or inst ==5):
+                            # requiere crear o borrar la db
+                            res=re.search('create schema',i,re.IGNORECASE)
+
+                            print(f'NEL PERRO, NO DEJARE QUE LE HAGAS {self.instrucciones[inst]}')
+                        else:
+                            # reuquiere usar la db
+                            self.execute_query(i.lower().replace(self.db.lower(),f'{self.db}{extension}'))    
+                        
                     else:
-                        print('EXECUTE T2')
+                        print('EXECUTE SIN PROBLEMAS')
                         self.execute_query(i)
 
+                
                 if self.SqlQueries==[''] or self.SqlQueries==[]:
                     #print('PM:{',self.file.primera_mitad,'}')
                     if(len(self.file.primera_mitad)>1):

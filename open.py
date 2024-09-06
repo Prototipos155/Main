@@ -1,4 +1,5 @@
 from colorama import Fore,Back
+import re
 #   POSIBLES ESCENARIOS
 
 #>>> 'unidos; asdaas;asdsad'.split(";")
@@ -26,6 +27,7 @@ class SQLFile():
     # asi como almacear las pars incompletad y unirlas cuando se complete la instrccion
     primera_mitad=None
     bloque=None
+    buscaFin=None
  
     def isLastIncomplete(self):
         if self.bloque[-1:]!="":
@@ -54,7 +56,6 @@ class SQLFile():
             return -1
         
         if (len(self.bloque)==1 and self.bloque[0]!=''):
-            #print('clk:',self.bloque)
             #el bucle pasado tomo la mitad de una instruccion
             #   y el actual tomo otra parte, pero no la final
             #print('LEN =1')
@@ -74,6 +75,71 @@ class SQLFile():
         self.bloque[0]= self.primera_mitad+self.bloque[0]
         #unidas
         return 3    
+
+    def functionIncomplete(self,buscaFin=None):
+        index=0
+        for inst in self.bloque :
+            if(not (self.containsAgroup(inst)==-1 and buscaFin==None)):
+                #o bien encontramos un 'begin' o estamos buscando un 'end'
+
+                if(self.containsAgroup(inst)!=-1):
+                    print('INICIO DEL BEGIN :',index)
+                    #este bloque contiene el inicio de un delimiter
+                    buscaFin =index
+                    
+                if(self.containsAgroup(inst,True)!=-1):
+                    #este bloque contiene el fin de un delimiter
+                    if(buscaFin==index):
+                        #encontramos el fin en la misma instruccion
+                        print('begin...end en la misma linea')
+                        buscaFin=False
+                    else:
+                        #encontramos el fin en otra linea
+                        print(f'founded({index})')
+                        index-=self.joinBlock(buscaFin,index)
+                        buscaFin=None
+                
+            index+=1
+        if (buscaFin!=None):
+            print('NO SE ENCONTRO EL END EN EL BLOQUE')
+            #alv, no esta el bloque end en esta lectura, hay que probar en la siguiente
+            self.joinBlock(buscaFin,index)
+            self.buscaFin= buscaFin
+
+        self.buscaFin= False
+
+    def recortarDelimiter(self,indexBegin):
+        self.bloque[indexBegin]=self.bloque[indexBegin].replace('//','')
+        
+        for res in re.finditer('delimiter',self.bloque[indexBegin],re.IGNORECASE):
+            self.bloque[indexBegin]=self.bloque[indexBegin].replace(self.bloque[indexBegin][res.start()::][:9],'')
+
+
+    def joinBlock(self,indexBegin,indexEnd):
+        print('JOINBLOCK')
+        #begin ....     7
+        #   update...;  8
+        #   update...;  9
+        #end;           10
+        self.bloque[indexBegin]+=';'
+
+        for times in range(indexEnd-indexBegin):
+            print(f'parte{times+1}:=={self.bloque[indexBegin+1]}')
+            self.bloque[indexBegin]+=self.bloque[indexBegin+1]
+            if(times<(indexEnd-indexBegin-1)):
+                self.bloque[indexBegin]+=';'
+            self.bloque.remove(self.bloque[indexBegin+1])
+
+        
+        self.recortarDelimiter(indexBegin)
+        
+        print(f'final bloxk={self.bloque[indexBegin]}')
+        return (indexEnd-indexBegin)
+
+    def containsAgroup(self,inst,delimiterFin=None):
+        return inst.lower().find("end" if delimiterFin else "begin")
+
+    
     def getSQLines(self,archivo): 
         #quitamos los espacios en blanco de mas
         self.bloque= archivo.read(3500).replace('  ',' ')
@@ -89,7 +155,7 @@ class SQLFile():
         #   ['abc','']
         # varias:
         #     ['abd','sads','']
-        #self.functionIncomplete(self.buscaFin)
+        self.functionIncomplete(self.buscaFin)
         self.unirInstruccion()
 
         self.isLastIncomplete()
