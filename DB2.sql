@@ -7,3 +7,6 @@ create table persona(
     nombre varchar(20)
 );
 insert into persona(nombre) values('paco'),('coco'),('melon'),('batman')
+
+
+--prueba de commit
