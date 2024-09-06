@@ -18,6 +18,7 @@ from colorama import Fore,Back
 # bloque
 # ['1', '2', '3', '4', '1', '12341']
 
+prueba =False
 
 class SQLFile(): 
     # principal problematica a resolver: tomar instrucciones incompletas que cotinuan en el siguiente bloque de read()
@@ -34,7 +35,7 @@ class SQLFile():
             self.bloque=self.bloque[:-1]
             return 1
         #todas las instrucciones estan completas
-        self.primera_mitad=None
+        #self.primera_mitad=None
         return -1
 
     def esPuntoYComa(self,bloque):
@@ -52,9 +53,11 @@ class SQLFile():
                 # (condicionales en order de acuerdo a lo aqui dicho)
             return -1
         
-        if len(self.bloque)==1:
+        if (len(self.bloque)==1 and self.bloque[0]!=''):
+            #print('clk:',self.bloque)
             #el bucle pasado tomo la mitad de una instruccion
             #   y el actual tomo otra parte, pero no la final
+            #print('LEN =1')
             self.primera_mitad+=self.bloque[0]
             return 1
         
@@ -65,34 +68,40 @@ class SQLFile():
             # emplieza el bloque con un ';', seguido de una instruccion, tal vez incompleta.Eso se vera en la siguiente fase
             self.bloque[0]=self.primera_mitad
             return 2
+        
+         
         #empieza el bloque con una instruccion, pueden ser varias
         self.bloque[0]= self.primera_mitad+self.bloque[0]
         #unidas
-        return 3
-        
-
+        return 3    
     def getSQLines(self,archivo): 
         #quitamos los espacios en blanco de mas
         self.bloque= archivo.read(3500).replace('  ',' ')
-        print(self.bloque)
+        #print('Bloque sql:{',self.bloque,'}')
+        
         #separamos por lineas sql
         self.bloque=self.bloque.split(";") 
+
         # escenarios:
-
-        # instruccion incompleta:
-        #   primera_mitad!=None
-
         # medio o inicio
         #   ['abc']
         # fin
         #   ['abc','']
         # varias:
         #     ['abd','sads','']
-        
+        #self.functionIncomplete(self.buscaFin)
         self.unirInstruccion()
 
         self.isLastIncomplete()
-        print('LAST:',self.primera_mitad)
+        #print('LAST(TERMINO):{',self.primera_mitad,'}')
         return self.bloque
+
+if(prueba):
+    bloque=[]
+    file=SQLFile()
+
+    archivo =open('DB2.sql', "r",encoding="utf-8")
+    file.getSQLines(archivo)
+    file.getSQLines(archivo)
 
         

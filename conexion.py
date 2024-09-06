@@ -100,6 +100,7 @@ class Conexion:
                 self.SqlQueries=self.file.getSQLines(archivo)
                 #print(c)
 
+                #print('queries=',self.SqlQueries)
                 for i in self.SqlQueries:
                     inst=self.detectar_Instruccion(i)
                     buscar=None
@@ -123,6 +124,9 @@ class Conexion:
                         self.execute_query(i)
 
                 if self.SqlQueries==[''] or self.SqlQueries==[]:
+                    #print('PM:{',self.file.primera_mitad,'}')
+                    if(len(self.file.primera_mitad)>1):
+                        self.execute_query(self.file.primera_mitad)
                     break
                 c+=1
         self.showQuery(True)
