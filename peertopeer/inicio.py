@@ -1,4 +1,4 @@
-from conexion import Conexion
+from peertopeer.conexion import Conexion
 
 cx=Conexion('EducamEsta',1,'DB.sql')
 #cx=Conexion()

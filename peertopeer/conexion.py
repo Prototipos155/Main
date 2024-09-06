@@ -1,6 +1,6 @@
 import pymysql
 from colorama import init, Fore, Back, Style
-from open import SQLFile
+from peertopeer.open import SQLFile
 import sqlite3
 import re
 
