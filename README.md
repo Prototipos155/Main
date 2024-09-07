@@ -1,4 +1,0 @@
-# Prototipos
-libreriras:
-    colorama
-    pymysql
